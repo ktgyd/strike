@@ -206,8 +206,8 @@ function evalContact(e,d,vOff,W,R,power,dir){
   const q=clamp(0.55*tn+0.45*(1-d/R),0,1);
   const norm=e<0?e/W:(e/lateW)*0.8;
   const phi=dir*norm*50+randn()*4.5;
-  const L=clamp(11-vOff*80+randn()*(4+(1-q)*6),-12,72);
-  const v0=(26+power*2.2)*(0.40+0.60*q);
+  const L=clamp(15+vOff*80+randn()*(4+(1-q)*6),-12,72);
+  const v0=(27+power*2.7)*(0.42+0.58*q);
   return {q,phi,L,v0,e,d,tn};
 }
 
@@ -223,8 +223,8 @@ function cpuAtBat(pitch,count,batter,pit){
   if(count.balls===3&&out>0) ps*=0.45;
   if(Math.random()>ps) return {swing:false,pp,out};
   const {W,R}=swingWindow(batter.contact);
-  const sigE=W*(0.62+0.10*pitch.diff+0.03*(pit.speed-5));
-  const sigD=R*(0.46+0.05*pitch.diff);
+  const sigE=W*(0.50+0.10*pitch.diff+0.03*(pit.speed-5));
+  const sigD=R*(0.36+0.05*pitch.diff);
   const cn=Math.hypot(pp.x/ZONE.x,(pp.y-0.81)/0.31);
   const d=Math.hypot(randn()*sigD,randn()*sigD)+out*0.85+Math.max(0,cn-0.75)*0.06;
   const e=randn()*sigE;
@@ -292,7 +292,7 @@ function simulateBall(x,y,z,v0,L,phi){
 
 /* 야수 추적 : 가장 먼저 공에 닿는 야수 */
 function findIntercept(sim,sk){
-  const SP=6.4*sk,REACT=0.32,REACH=1.2;
+  const SP=5.7*sk,REACT=0.40,REACH=1.1;
   const tr=sim.tr,hrT=sim.hr?sim.hr.t:1e9;
   let best=null;
   FIELDERS.forEach((f,fi)=>{
@@ -433,15 +433,15 @@ scene.add(sun,sun.target);
 
 /* ---------- 경기장 ---------- */
 const grassTex=canvasTex(512,512,(g,w,h)=>{
-  for(let i=0;i<8;i++){g.fillStyle=i%2?'#3c8a38':'#479a42';g.fillRect(0,i*64,w,64);}
+  for(let i=0;i<8;i++){g.fillStyle=i%2?'#27672a':'#2f742f';g.fillRect(0,i*64,w,64);}
   for(let i=0;i<9000;i++){const a=Math.random()*0.10;g.fillStyle=Math.random()<0.5?'rgba(255,255,255,'+(a*0.5)+')':'rgba(0,40,0,'+a+')';g.fillRect(Math.random()*w,Math.random()*h,2,3);}
 },[14,14]);
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(672,672),new THREE.MeshLambertMaterial({map:grassTex}));
 ground.rotation.x=-Math.PI/2;ground.position.set(0,0,-60);ground.receiveShadow=true;scene.add(ground);
 
 const dirtTex=canvasTex(256,256,(g,w,h)=>{
-  g.fillStyle='#b9805a';g.fillRect(0,0,w,h);
-  for(let i=0;i<5000;i++){g.fillStyle=(Math.random()<0.5?'rgba(90,50,25,':'rgba(235,195,155,')+(Math.random()*0.14)+')';g.fillRect(Math.random()*w,Math.random()*h,2,2);}
+  g.fillStyle='#8c5638';g.fillRect(0,0,w,h);
+  for(let i=0;i<5000;i++){g.fillStyle=(Math.random()<0.5?'rgba(60,30,12,':'rgba(190,140,100,')+(Math.random()*0.14)+')';g.fillRect(Math.random()*w,Math.random()*h,2,2);}
 },[6,6]);
 const infTex=grassTex.clone();infTex.needsUpdate=true;infTex.repeat.set(3,3);
 
@@ -453,7 +453,7 @@ function layer(geo,mat,x,z,i,rotZ){
 }
 const dirtMat=()=>new THREE.MeshLambertMaterial({map:dirtTex});
 layer(new THREE.CircleGeometry(29.5,64),dirtMat(),0,-18.44,1);
-layer(new THREE.PlaneGeometry(24.5,24.5),new THREE.MeshLambertMaterial({map:infTex,color:0xeaffe2}),0,-19.4,2,Math.PI/4);
+layer(new THREE.PlaneGeometry(24.5,24.5),new THREE.MeshLambertMaterial({map:infTex,color:0xd2ecc8}),0,-19.4,2,Math.PI/4);
 function path(a,b,w,i){
   const dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz);
   const m=layer(new THREE.PlaneGeometry(w,L),dirtMat(),(a.x+b.x)/2,(a.z+b.z)/2,i);
@@ -481,7 +481,7 @@ function loft(rf0,y0,rf1,y1,n,mat,uRep,vRep){
   const m=new THREE.Mesh(g,mat);scene.add(m);return m;
 }
 {
-  const wm=new THREE.MeshLambertMaterial({map:dirtTex,color:0xc8946a,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
+  const wm=new THREE.MeshLambertMaterial({map:dirtTex,color:0xa9794f,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
   const ws=loft(p=>wallDist(p)-4.5,0.01,p=>wallDist(p),0.01,180,wm,60,2);ws.receiveShadow=true;
 }
 // 파울라인
@@ -566,11 +566,14 @@ chalk(0.95,-0.9,0.95,1.1,0.08);chalk(1.95,-0.9,1.95,1.1,0.08);chalk(1.95,-0.9,0.
    캐릭터 / 사람 모델
    ===================================================================== */
 const CHARS=[
-  {name:'이후철',shirt:0x1f6fe0,cap:0x12306b,pants:0xf2f4f8,skin:0xf0c8a0,w:1.0, h:1.0, speed:8,control:6,power:7, contact:7,desc:'균형 잡힌 에이스 · 직구가 묵직하다'},
-  {name:'최석헌',shirt:0xd63a3a,cap:0x5a1111,pants:0xf2f4f8,skin:0xd9a577,w:0.95,h:1.06,speed:6,control:9,power:6, contact:8,desc:'칼날 제구의 기교파 · 선구안이 좋다'},
-  {name:'김태균',shirt:0x1fa05a,cap:0x0f4d2a,pants:0xf2f4f8,skin:0xe8b891,w:1.25,h:1.04,speed:7,control:5,power:10,contact:6,desc:'괴력의 거포 · 한 방이 있다'},
-  {name:'유진영',shirt:0x8a3fe0,cap:0x2b1259,pants:0xf2f4f8,skin:0xf3d2b0,w:0.88,h:0.98,speed:9,control:6,power:5, contact:9,desc:'불같은 강속구 · 콘택트의 달인'}
+  {name:'이후철',ht:185,wt:110,shirt:0x1f6fe0,cap:0x12306b,pants:0xf2f4f8,skin:0xf0c8a0,speed:8,control:6,power:7, contact:7,desc:'균형 잡힌 에이스 · 직구가 묵직하다'},
+  {name:'최석헌',ht:177,wt:88,shirt:0xd63a3a,cap:0x5a1111,pants:0xf2f4f8,skin:0xd9a577,speed:6,control:9,power:6, contact:8,desc:'칼날 제구의 기교파 · 선구안이 좋다'},
+  {name:'김태균',ht:173,wt:100,shirt:0x1fa05a,cap:0x0f4d2a,pants:0xf2f4f8,skin:0xe8b891,speed:7,control:5,power:10,contact:6,desc:'괴력의 거포 · 한 방이 있다'},
+  {name:'유진영',ht:179,wt:69,shirt:0x8a3fe0,cap:0x2b1259,pants:0xf2f4f8,skin:0xf3d2b0,speed:9,control:6,power:5, contact:9,desc:'불같은 강속구 · 콘택트의 달인'}
 ];
+/* 키(cm)·몸무게(kg) → 모델 비율 (기준 178cm, BMI 23) */
+function bodyScale(c){const bmi=c.wt/Math.pow(c.ht/100,2);return{h:c.ht/178,w:clamp(1+(bmi-23)*0.04,0.8,1.5)};}
+CHARS.forEach(c=>Object.assign(c,bodyScale(c)));
 const OPP={shirt:0x2a2e3a,cap:0xf08a24,pants:0xcfd3da,skin:0xe3b48c};
 const OPP_BATTERS=[
   {n:'한도현',side:1, power:6,contact:6,eye:0.5},{n:'서준호',side:-1,power:5,contact:7,eye:0.6},
@@ -775,7 +778,7 @@ const S={
 };
 let aimU=0,aimY=0.82,clock=0;
 const vs=()=>S.mode==='pitcher'?-1:1;
-const limit=()=>S.mode==='pitcher'?3:1;
+const limit=()=>3;
 const batSide=()=>S.mode==='pitcher'?S.opp.side:1;
 
 /* =====================================================================
@@ -977,7 +980,7 @@ function startGame(){
   ballHide();resetPoses();hud();
   pitchCam(true);
   S.phase='idle';S.timer=1.4;ctrlEnabled(S.mode==='pitcher');
-  banner('PLAY BALL!','strike',1300,S.mode==='pitcher'?'3아웃을 잡아라':'1아웃 전까지 최대한 쳐라');
+  banner('PLAY BALL!','strike',1300,S.mode==='pitcher'?'3아웃을 잡아라':'3아웃 전까지 최대한 쳐라');
 }
 
 function showMenu(){
@@ -1261,8 +1264,8 @@ function finishGame(){
       sub=CHARS[S.ch].name+' · '+st.pitches+'구 '+S.runs+'실점';
       stats=[['실점',S.runs],['삼진',st.k],['피안타',st.h],['피홈런',st.hr],['볼넷',st.bb],['투구수',st.pitches]];
     }else{
-      grade=S.pts>=8?'S':S.pts>=5?'A':S.pts>=3?'B':S.pts>=1?'C':'D';
-      title='아웃! 경기 종료';
+      grade=S.pts>=12?'S':S.pts>=8?'A':S.pts>=5?'B':S.pts>=2?'C':'D';
+      title='3아웃! 경기 종료';
       sub=CHARS[S.ch].name+' · '+S.pts+'점 획득';
       stats=[['점수',S.pts],['안타',st.h],['홈런',st.hr],['최장 비거리',st.best?st.best+'m':'-'],['퍼펙트',st.perfect],['본 공',st.pitches]];
     }
@@ -1277,10 +1280,10 @@ function finishGame(){
    ===================================================================== */
 function refreshMenu(){
   const pm=S.mode==='pitcher',ch=CHARS[S.ch];
-  $('sub').textContent=pm?'마운드에서 한 이닝, 3아웃을 잡아라':'타석에서 1아웃 전까지 최대한 쳐라';
+  $('sub').textContent=pm?'마운드에서 한 이닝, 3아웃을 잡아라':'타석에서 3아웃 전까지 최대한 쳐라';
   [...$('modeSeg').children].forEach(b=>b.className=b.dataset.m===S.mode?'on':'');
   [...$('chars').children].forEach((b,i)=>b.className=i===S.ch?'on':'');
-  $('cdesc').textContent=ch.desc;
+  $('cdesc').textContent=ch.ht+'cm / '+ch.wt+'kg · '+ch.desc;
   const rows=[['구속','speed',pm],['제구','control',pm],['파워','power',!pm],['정확','contact',!pm]];
   $('stats').innerHTML=rows.map(r=>'<div class="st'+(r[2]?'':' dim')+'"><span>'+r[0]+'</span><i><u style="width:'+ch[r[1]]*10+'%"></u></i></div>').join('');
   disposeGroup(showcase);
