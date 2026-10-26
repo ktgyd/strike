@@ -232,15 +232,17 @@ const isStrike=(x,y)=>Math.abs(x)<=ZONE.x&&y>=ZONE.y0&&y<=ZONE.y1;
 const swingWindow=c=>({W:0.10+c*0.0085,R:0.30+c*0.022});
 
 /* 접촉 판정 : e=타이밍 오차(초, +는 늦음), d=배트-공 거리, vOff=공높이-배트높이 */
-function evalContact(e,d,vOff,W,R,power,dir){
+function evalContact(e,d,vOff,W,R,power,dir,boost){
   const lateW=W*0.45;
   if(e<-W||e>lateW||d>R) return null;
   const tn=e<0?1-(-e)/W:1-e/lateW;
   const q=clamp(0.55*tn+0.45*(1-d/R),0,1);
   const norm=e<0?e/W:(e/lateW)*0.8;
   const phi=dir*norm*50+randn()*4.5;
-  const L=clamp(15+vOff*80+randn()*(4+(1-q)*6),-12,72);
-  const v0=(27+power*2.7)*(0.42+0.58*q);
+  let L=clamp(17+vOff*80+randn()*(4+(1-q)*6),-12,72);
+  let v0=(27+power*2.7)*(0.42+0.58*q);            // 파워 → 타구 속도(장타·2루타 비율)
+  /* 재미용 홈런 보너스(플레이어 타자만): 좋은 타이밍이면 파워와 거의 무관하게 홈런 확률이 붙는다 */
+  if(boost&&q>0.70&&L>=12&&L<=40&&Math.random()<0.34+0.012*(power-6)){v0=Math.max(v0,47+(q-0.70)*10);L=clamp(L,23,34);}
   return {q,phi,L,v0,e,d,tn};
 }
 
@@ -600,14 +602,14 @@ chalk(0.95,-0.9,0.95,1.1,0.08);chalk(1.95,-0.9,1.95,1.1,0.08);chalk(1.95,-0.9,0.
    캐릭터 / 사람 모델
    ===================================================================== */
 const CHARS=[
-  {name:'이후철',team:'롯데',num:7,ht:185,wt:110,shirt:0xf5f6fa,trim:0xc8102e,cap:0x0c1f4a,pants:0xf5f6fa,sock:0x0c1f4a,numc:0x0c1f4a,skin:0xf0c8a0,speed:8,control:6,power:7, contact:7,desc:'균형 잡힌 에이스 · 직구가 묵직하다'},
-  {name:'최석헌',team:'LG',num:11,ht:177,wt:88,shirt:0xf4f4f6,stripe:0x1a1a1f,trim:0xc30452,cap:0x15151a,pants:0xf4f4f6,sock:0x15151a,numc:0xc30452,skin:0xd9a577,speed:6,control:9,power:6, contact:8,desc:'칼날 제구의 기교파 · 선구안이 좋다'},
-  {name:'김태균',team:'LA',num:52,ht:173,wt:100,shirt:0xf6f7f9,trim:0x005a9c,cap:0x005a9c,pants:0xf6f7f9,sock:0x005a9c,numc:0x005a9c,skin:0xe8b891,speed:7,control:5,power:10,contact:6,desc:'괴력의 거포 · 한 방이 있다'},
-  {name:'유진영',team:'LG',num:29,ht:179,wt:69,shirt:0xf4f4f6,stripe:0x1a1a1f,trim:0xc30452,cap:0x15151a,pants:0xf4f4f6,sock:0x15151a,numc:0xc30452,skin:0xf3d2b0,speed:9,control:6,power:5, contact:9,desc:'불같은 강속구 · 콘택트의 달인'}
+  {name:'이후철',team:'롯데',num:7,ht:185,wt:110,shirt:0xf5f6fa,trim:0xc8102e,cap:0x0c1f4a,pants:0xf5f6fa,sock:0x0c1f4a,numc:0x0c1f4a,skin:0xf0c8a0,speed:8,control:6,power:7, contact:7,desc:'압도적인 체격에서 나오는 최고의 장타력 · 묵직한 직구'},
+  {name:'최석헌',team:'LG',num:11,ht:177,wt:88,shirt:0xf4f4f6,stripe:0x1a1a1f,trim:0xc30452,cap:0x15151a,pants:0xf4f4f6,sock:0x15151a,numc:0xc30452,skin:0xd9a577,speed:6,control:9,power:6, contact:8,desc:'칼 같은 제구의 기교파 · 정확한 콘택트에 중간 정도의 파워'},
+  {name:'김태균',team:'LA',num:52,ht:173,wt:100,shirt:0xf6f7f9,trim:0x005a9c,cap:0x005a9c,pants:0xf6f7f9,sock:0x005a9c,numc:0x005a9c,skin:0xe8b891,speed:7,control:5,power:10,contact:6,desc:'묵직한 체격의 거포 · 제대로 맞으면 담장을 넘긴다'},
+  {name:'유진영',team:'LG',num:29,ht:179,wt:69,shirt:0xf4f4f6,stripe:0x1a1a1f,trim:0xc30452,cap:0x15151a,pants:0xf4f4f6,sock:0x15151a,numc:0xc30452,skin:0xf3d2b0,speed:9,control:6,power:5, contact:9,desc:'가장 빠른 공과 정확한 콘택트 · 파워보다 안타로 승부하는 날쌘 타입'}
 ];
 /* 키(cm)·몸무게(kg) → 모델 비율 (기준 178cm, BMI 23) */
 function bodyScale(c){const bmi=c.wt/Math.pow(c.ht/100,2);return{h:c.ht/178,w:clamp(1+(bmi-23)*0.04,0.8,1.5)};}
-CHARS.forEach(c=>Object.assign(c,bodyScale(c)));
+CHARS.forEach(c=>{Object.assign(c,bodyScale(c));c.power=clamp(Math.round(3+(c.wt-65)*0.14),3,10);});   // 파워는 체중에 비례
 const charLook=c=>({shirt:c.shirt,cap:c.cap,pants:c.pants,skin:c.skin,w:c.w,h:c.h,trim:c.trim,sock:c.sock,stripe:c.stripe,num:c.num,numc:c.numc});
 const OPP={shirt:0x2a2e3a,cap:0xf08a24,pants:0xcfd3da,skin:0xe3b48c,trim:0xf08a24,sock:0x2a2e3a};
 const OPP_BATTERS=[
@@ -1214,7 +1216,7 @@ function resolveSwing(){
     const ch=CHARS[S.ch],win=swingWindow(ch.contact);
     const e=sw.contactAt-(TR+S0*S.pitch.dur);
     const d=Math.hypot(pp.x-sw.rx,pp.y-sw.ry),vOff=pp.y-sw.ry;
-    ct=evalContact(e,d,vOff,win.W,win.R,ch.power,1);
+    ct=evalContact(e,d,vOff,win.W,win.R,ch.power,1,true);
     if(ct){
       feedback(ct.q>0.88?'PERFECT!':(ct.q>0.65?'GOOD':(e<0?'조금 빨랐어요':'조금 늦었어요')),ct.q>0.88?'#ffd23a':'#fff',800);
     }else{
@@ -1513,7 +1515,7 @@ function refreshMenu(){
   $('sub').textContent=pm?'마운드에서 한 이닝, 3아웃을 잡아라':'타석에서 3아웃 전까지 최대한 쳐라';
   [...$('modeSeg').children].forEach(b=>b.className=b.dataset.m===S.mode?'on':'');
   [...$('chars').children].forEach((b,i)=>b.className=i===S.ch?'on':'');
-  $('cdesc').textContent='';
+  $('cdesc').textContent=ch.desc;
   const rows=[['구속','speed',pm],['제구','control',pm],['파워','power',!pm],['정확','contact',!pm]];
   $('stats').innerHTML=rows.map(r=>'<div class="st'+(r[2]?'':' dim')+'"><span>'+r[0]+'</span><i><u style="width:'+ch[r[1]]*10+'%"></u></i></div>').join('');
   disposeGroup(showcase);
