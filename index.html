@@ -104,6 +104,9 @@ button{font-family:inherit;touch-action:manipulation;cursor:pointer}
 .endbtns button.pri{background:linear-gradient(135deg,#ffb020,#ff5a1a);color:#1a0d00;border-color:#ffd37a}
 input{-webkit-user-select:text;user-select:text}
 .big.ghost{background:rgba(255,255,255,.1);color:#fff;box-shadow:none;border:2px solid rgba(255,255,255,.28);margin-top:8px;font-size:16px;padding:11px}
+#snd{position:fixed;right:10px;top:calc(max(10px,env(safe-area-inset-top)) + 72px);width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:rgba(8,18,34,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;font-size:21px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;z-index:4}
+#snd.on{border-color:#ffd37a;background:rgba(255,176,32,.28)}
+#snd:active{transform:scale(.92)}
 #rank{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(4,10,20,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:14px;z-index:5}
 #rankbox{width:100%;max-width:440px;max-height:100%;overflow:auto;background:rgba(12,24,44,.96);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:16px 14px}
 #rankbox h2{margin:0 0 10px;text-align:center;font-size:22px;font-weight:900}
@@ -124,6 +127,7 @@ input{-webkit-user-select:text;user-select:text}
 </head>
 <body>
 <canvas id="c"></canvas>
+<button id="snd" type="button" aria-label="소리 켜기" title="소리 켜기">🔇</button>
 
 <div id="menu">
   <div class="title"><h1>⚾ 3D 야구 · 한 이닝</h1><p id="sub"></p></div>
@@ -887,8 +891,9 @@ function updateFx(dt){
 /* =====================================================================
    사운드 (WebAudio)
    ===================================================================== */
-let AC=null;
+let AC=null,soundOn=false;                 // 기본값: 음소거
 function ac(){
+  if(!soundOn)return null;
   if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){AC=null;}}
   if(AC&&AC.state==='suspended')AC.resume();
   return AC;
@@ -1500,6 +1505,9 @@ $('oForm').addEventListener('submit',async(e)=>{
   $('oMsg').textContent=ok?'랭킹에 등록했어요! 🏆':'이 기기에 저장했어요. 서버에 연결되면 자동으로 올라가요.';
   if(ok)openRank(m);
 });
+function syncSnd(){const b=$('snd');b.textContent=soundOn?'🔊':'🔇';b.className=soundOn?'on':'';const t=soundOn?'소리 끄기':'소리 켜기';b.setAttribute('aria-label',t);b.title=t;}
+$('snd').addEventListener('click',()=>{soundOn=!soundOn;syncSnd();if(soundOn){ac();sfx.tick();}});
+syncSnd();
 $('rankBtn').addEventListener('click',()=>openRank(S.mode));
 $('rankBtn2').addEventListener('click',()=>openRank(curMode));
 $('rClose').addEventListener('click',closeRank);
